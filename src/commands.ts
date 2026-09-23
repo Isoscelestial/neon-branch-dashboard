@@ -86,44 +86,69 @@ commands.set(['dev', 'd'], async (githubUsername?: string) => {
     return;
   }
 
+  const branchName = dev(githubUsername.toLowerCase());
+
   const branches = await getBranches();
 
-  let branch = branches.find((branch) => branch.name === dev(githubUsername));
-  let uri;
+  let branch = branches.find(
+    (branch) => branch.name.toLowerCase() === branchName,
+  );
 
   if (!branch) {
     const response = await confirmation(
-      `Could not find a branch called "${dev(githubUsername)}". Would you like to create this branch?`,
+      `Could not find a branch called "${branchName}". Would you like to create this branch?`,
     );
     if (!response) {
-      console.log('Never mind');
+      console.log("Won't create a branch");
       return;
     }
 
-    const { data, error } = await neon.branches.createAndConnect({
+    console.log('→ Creating branch...');
+    const { data: newBranch, error: createError } = await neon.branches.create({
       projectId,
-      name: dev(githubUsername),
+      name: branchName,
     });
-
-    if (data) {
-      uri = data.connectionString;
-    }
-  } else {
-    uri = (
-      await neon.postgres.connectionString({
-        projectId: process.env.NEON_PROJECT_ID!,
-        databaseName: 'neondb',
-        roleName: 'neondb_owner',
-        branchId: branch.id,
-      })
-    ).data;
-
-    if (!uri) {
-      console.log(
-        `Failed to fetch connection string for branch "${dev(githubUsername)}"`,
+    if (createError) {
+      console.error(
+        `There was an error creating branch "${branchName}":`,
+        createError,
       );
       return;
     }
+
+    console.log('→ Resetting to unique password...');
+    const { error: resetPasswordError } =
+      await neon.postgres.roles.resetPassword({
+        projectId,
+        branchId: newBranch.id,
+        roleName: 'neondb_owner',
+      });
+    if (resetPasswordError) {
+      console.error(
+        `There was an error resetting to a unique password for the branch "${branchName}":`,
+        createError,
+      );
+      console.warn(
+        'This connection string will have the same password as the default branch, which is more unsecure. Careful who you send this one to.',
+      );
+    }
+
+    branch = newBranch;
+  }
+
+  console.log('→ Fetching connection string...');
+  const uri = (
+    await neon.postgres.connectionString({
+      projectId: process.env.NEON_PROJECT_ID!,
+      databaseName: 'neondb',
+      roleName: 'neondb_owner',
+      branchId: branch.id,
+    })
+  ).data;
+
+  if (!uri) {
+    console.log(`Failed to fetch connection string for branch "${branchName}"`);
+    return;
   }
 
   console.log(uri);
