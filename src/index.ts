@@ -1,12 +1,7 @@
-import { createInterface } from 'node:readline/promises';
 import commands from '@/commands';
+import rl from '@/utils/readline';
 
 async function main() {
-  const rl = createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
   console.log('Neon Branch Dashboard CLI');
 
   try {
@@ -35,9 +30,13 @@ async function main() {
 
         if (commandFn) {
           try {
-            commandFn(...argv);
+            argv.shift();
+            await commandFn(...argv);
           } catch (e) {
-            console.error(`Error while running command "${command}":`, e);
+            console.error(
+              `An error occurred while running command "${command}" -`,
+              e,
+            );
           }
         } else {
           console.log(`Unable to execute function for command "${command}"`);
