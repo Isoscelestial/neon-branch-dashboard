@@ -34,7 +34,11 @@ async function main() {
         const commandFn = commands.get(key);
 
         if (commandFn) {
-          commandFn(...argv);
+          try {
+            commandFn(...argv);
+          } catch (e) {
+            console.error(`Error while running command "${command}":`, e);
+          }
         } else {
           console.log(`Unable to execute function for command "${command}"`);
         }
