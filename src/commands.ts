@@ -3,6 +3,8 @@ import neon from '@/utils/neon';
 import { dev } from '@/utils/templates';
 import rl from '@/utils/readline';
 import confirmation from '@/utils/confirmation';
+import octokit from '@/utils/octokit';
+import { RequestError } from 'octokit';
 
 const commands = new Map<string | string[], (...args: any[]) => any>();
 
@@ -42,6 +44,65 @@ async function getBranches(): Promise<Branch[]> {
   const data = await res.json();
 
   return data.branches as Branch[];
+}
+
+/** Verifies that the provided GitHub account is in the engineering division of the Nebula Labs org */
+async function inGitHubOrg(
+  githubUsername: string,
+): Promise<boolean | 'notEngineer'> {
+  const checkInOrg = async (): Promise<boolean> => {
+    try {
+      const { status } = await octokit.rest.orgs.checkMembershipForUser({
+        org: 'UTDNebula',
+        username: githubUsername,
+      });
+
+      switch (status as number) {
+        case 204:
+          return true;
+        case 302:
+          return false;
+      }
+    } catch (e) {
+      if ((e as RequestError).status === 404) {
+        return false;
+      }
+
+      console.error(
+        `There was an error checking if "${githubUsername}" is in the organization:`,
+        e,
+      );
+    }
+    return false;
+  };
+
+  const checkIsEngineer = async (): Promise<boolean> => {
+    try {
+      const { data } = await octokit.rest.teams.getMembershipForUserInOrg({
+        org: 'UTDNebula',
+        team_slug: 'engineering',
+        username: githubUsername,
+      });
+
+      return data.state === 'active';
+    } catch (e) {
+      if ((e as RequestError).status === 404) {
+        return false;
+      }
+
+      console.error(
+        `There was an error checking if "${githubUsername}" is in the Engineering team:`,
+        e,
+      );
+    }
+    return false;
+  };
+
+  const isEngineer = await checkIsEngineer();
+  const inOrg = isEngineer ? true : await checkInOrg();
+
+  if (inOrg && !isEngineer) return 'notEngineer';
+  return inOrg;
 }
 
 //
@@ -101,6 +162,27 @@ commands.set(['dev', 'd'], async (githubUsername?: string) => {
     if (!response) {
       console.log("Won't create a branch");
       return;
+    }
+
+    const inOrg = await inGitHubOrg(githubUsername);
+
+    if (!inOrg) {
+      const response = await confirmation(
+        `${githubUsername} is NOT in the UTDNebula GitHub organization. Against recommendations, are you sure you want to create this branch?`,
+      );
+      if (!response) {
+        console.log("Won't create a branch");
+        return;
+      }
+    }
+    if (inOrg === 'notEngineer') {
+      const response = await confirmation(
+        `${githubUsername} is in the UTDNebula GitHub organization, but not in the engineering team. Would you like to create the branch anyway?`,
+      );
+      if (!response) {
+        console.log("Won't create a branch");
+        return;
+      }
     }
 
     console.log('→ Creating branch...');
