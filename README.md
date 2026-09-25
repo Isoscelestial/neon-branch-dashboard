@@ -9,6 +9,11 @@ Also interacts with the GitHub API using octokit.js:
 
 - octokit.js - [Documentation](https://github.com/octokit/octokit.js)
 
+## Usage
+
+- `npm run start` - Runs the CLI interface
+- `npm run format` - Format using Prettier
+
 ## Environment Variables
 
 - `NEON_API_URL` - URL for calling Neon API raw

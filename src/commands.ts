@@ -9,10 +9,11 @@ import { RequestError } from 'octokit';
 const commands = new Map<string | string[], (...args: any[]) => any>();
 
 const helpMessage = `Available commands for Neon Branch Dashboard CLI:
-  help, h - Shows this help message
-  get, g - Gets connection string for an existing branch
-  dev, d - Gets connection string for a developer's branch given their username. If missing, creates a branch
-  exit, quit, q - End session`;
+  help, h    # Shows this help message
+  get, g       [branchName]    # Gets connection string for an existing branch
+  dev, d       [githubUsername]    # Gets connection string for a developer's branch given their username. If missing, creates a branch
+  exit,
+  quit, q    # End session`;
 
 commands.set(['help', 'h'], () => {
   console.log(helpMessage);
