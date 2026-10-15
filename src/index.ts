@@ -1,5 +1,5 @@
 import commands from '@/commands';
-import rl from '@/utils/readline';
+import rl from '@/lib/cli/readline';
 
 async function main() {
   console.log('Neon Branch Dashboard CLI');

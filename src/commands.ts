@@ -1,10 +1,8 @@
-import { Branch } from '@neon/sdk';
-import neon from '@/utils/neon';
-import { dev } from '@/utils/templates';
-import rl from '@/utils/readline';
-import confirmation from '@/utils/confirmation';
-import octokit from '@/utils/octokit';
-import { RequestError } from 'octokit';
+import neon from '@/lib/sdk/neon';
+import { dev } from '@/lib/utils/templates';
+import confirmation from '@/lib/cli/confirmation';
+import getBranches from '@/lib/utils/getBranches';
+import inGitHubOrg from '@/lib/utils/inGitHubOrg';
 
 const commands = new Map<string | string[], (...args: any[]) => any>();
 
@@ -21,90 +19,6 @@ commands.set(['help', 'h'], () => {
 
 const project_id = process.env.NEON_PROJECT_ID!;
 const projectId = process.env.NEON_PROJECT_ID!;
-
-async function getBranches(): Promise<Branch[]> {
-  // // It appears there's a bug with the Neon Management SDK. The following should work but it crashes, hence why we're manually fetching from the Neon API
-  // const { all } = neon.branches.list({ projectId });
-  // const { data: branches } = await all();
-
-  const params = new URLSearchParams({
-    project_id,
-  });
-
-  const res = await fetch(
-    `${process.env.NEON_API_URL}/projects/${process.env.NEON_PROJECT_ID}/branches?${params.toString()}`,
-    {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${process.env.NEON_API_KEY}`,
-      },
-    },
-  );
-
-  const data = await res.json();
-
-  return data.branches as Branch[];
-}
-
-/** Verifies that the provided GitHub account is in the engineering division of the Nebula Labs org */
-async function inGitHubOrg(
-  githubUsername: string,
-): Promise<boolean | 'notEngineer'> {
-  const checkInOrg = async (): Promise<boolean> => {
-    try {
-      const { status } = await octokit.rest.orgs.checkMembershipForUser({
-        org: 'UTDNebula',
-        username: githubUsername,
-      });
-
-      switch (status as number) {
-        case 204:
-          return true;
-        case 302:
-          return false;
-      }
-    } catch (e) {
-      if ((e as RequestError).status === 404) {
-        return false;
-      }
-
-      console.error(
-        `There was an error checking if "${githubUsername}" is in the organization:`,
-        e,
-      );
-    }
-    return false;
-  };
-
-  const checkIsEngineer = async (): Promise<boolean> => {
-    try {
-      const { data } = await octokit.rest.teams.getMembershipForUserInOrg({
-        org: 'UTDNebula',
-        team_slug: 'engineering',
-        username: githubUsername,
-      });
-
-      return data.state === 'active';
-    } catch (e) {
-      if ((e as RequestError).status === 404) {
-        return false;
-      }
-
-      console.error(
-        `There was an error checking if "${githubUsername}" is in the Engineering team:`,
-        e,
-      );
-    }
-    return false;
-  };
-
-  const isEngineer = await checkIsEngineer();
-  const inOrg = isEngineer ? true : await checkInOrg();
-
-  if (inOrg && !isEngineer) return 'notEngineer';
-  return inOrg;
-}
 
 //
 // GET
