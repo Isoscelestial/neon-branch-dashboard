@@ -1,4 +1,4 @@
-import commands from '@/commands';
+import commands from '@/lib/cli/commands';
 import rl from '@/lib/cli/readline';
 
 async function main() {
