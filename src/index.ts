@@ -34,13 +34,31 @@ async function main() {
       }
 
       if (['help', 'h'].includes(command)) {
-        console.log('\nAvailable commands for Neon Branch Dashboard CLI:');
-        console.log(` ${'help, h'.padEnd(20, ' ')} Shows this help message`);
-        console.log(` ${'exit, quit, q'.padEnd(20, ' ')} End session`);
-        console.log();
-        for (const [key, value] of commands) {
-          const commands = typeof key === 'string' ? key : key.join(', ');
-          console.log(` ${commands.padEnd(20, ' ')} ${value.helpMessage}`);
+        if (!argv[1]) {
+          console.log('\nAvailable commands for Neon Branch Dashboard CLI:');
+          console.log(` ${'help, h'.padEnd(20, ' ')} Shows this help message`);
+          console.log(` ${'exit, quit, q'.padEnd(20, ' ')} End session`);
+          console.log();
+          for (const [key, value] of commands) {
+            const keyArr = typeof key === 'string' ? key : key.join(', ');
+            console.log(` ${keyArr.padEnd(20, ' ')} ${value.description}`);
+          }
+        } else {
+          const commandStr = argv[1].toLowerCase();
+          const key = commands
+            .keys()
+            .find((k) =>
+              typeof k === 'string' ? k === commandStr : k.includes(commandStr),
+            );
+
+          if (!key) {
+            console.log(`Unknown command "${argv[1]}"`);
+          } else {
+            const command = commands.get(key);
+            const keyArr = typeof key === 'string' ? key : key.join(', ');
+            console.log(`${keyArr}    ${command?.description}`);
+            console.log(command?.help);
+          }
         }
         continue;
       }

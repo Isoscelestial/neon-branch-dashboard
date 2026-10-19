@@ -8,8 +8,9 @@ import { dev } from '@/lib/utils/templates';
 
 export const DevCMD = createCommand({
   command: ['dev', 'd'],
-  helpMessage:
+  description:
     "Gets connection string for a developer's branch given their username. If missing, creates a branch",
+  help: 'Usage: dev <branchName>',
   async function(githubUsername?: string) {
     requireEnvVar('NEON_PROJECT_ID');
 

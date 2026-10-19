@@ -9,7 +9,8 @@ const commandsDir = path.resolve('src', 'commands');
 type CommandOptions = {
   command: string | string[];
   function: (...args: any[]) => any;
-  helpMessage?: string;
+  description?: string;
+  help?: string;
 };
 
 const commands = new Map<
