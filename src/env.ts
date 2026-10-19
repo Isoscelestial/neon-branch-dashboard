@@ -16,7 +16,9 @@ const envSchema = z.object({
         'Missing GitHub Personal Access Token! Must have permissions to read organization members',
     })
     .optional(),
-  PRODUCTION_DATABASE_URL: z.string().optional(),
+  PRODUCTION_DATABASE_URL: z
+    .string({ error: 'Should be an unpooled database URL' })
+    .optional(),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

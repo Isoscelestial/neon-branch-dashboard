@@ -37,24 +37,24 @@ export const ProdCMD = createCommand({
           return;
         }
 
-        console.log();
-
-        console.log('→ Fetching target branch connection string...');
+        console.log('\n→ Fetching target branch connection string...');
         const TARGET_DB_URL = await getConnectionString(branchName);
-        if (!TARGET_DB_URL) return;
+        const TARGET_DB_URL_UNPOOLED = await getConnectionString(
+          branchName,
+          false,
+        );
+        if (!TARGET_DB_URL || !TARGET_DB_URL_UNPOOLED) return;
 
         if (
           !(await confirmation(
-            `Just to verify, here's the connection URL for the target branch ${branchName}: \n${TARGET_DB_URL} \nDoes this look correct?`,
+            `Just to verify, here's the connection URL for the target branch ${branchName}: \n${TARGET_DB_URL_UNPOOLED} \nDoes this look correct?`,
           ))
         ) {
           console.log('Cancelled transfer');
           return;
         }
 
-        console.log();
-
-        console.log('→ Checking if dump file exists...');
+        console.log('\n→ Checking if dump file exists...');
         const dumpExists = await checkIfDumpExists();
         if (dumpExists) {
           if (await confirmation(`Dump exists already. Copy from file?`)) {
@@ -81,35 +81,29 @@ export const ProdCMD = createCommand({
           }
         }
 
-        console.log();
-
         const redactDatabase = await confirmation(
-          "Would you like to automatically redact the data of sensitive information once it's been copied over using the default redaction scopes?",
+          "\nWould you like to automatically redact the data of sensitive information once it's been copied over using the default redaction scopes?",
         );
 
         if (
           !(await confirmation(
-            `Copy data to the "${branchName}" database branch? \nWARNING: This will completely overwrite any existing data!`,
+            `\nCopy data to the "${branchName}" database branch? \nWARNING: This will completely overwrite any existing data!`,
           ))
         ) {
           console.log("Won't copy data");
           return;
         }
 
-        console.log(`→ Copying data to ${branchName}...`);
-        await restoreDatabase(TARGET_DB_URL);
-
-        console.log();
+        console.log(`\n→ Copying data to ${branchName}...`);
+        await restoreDatabase(TARGET_DB_URL_UNPOOLED);
 
         if (redactDatabase) {
-          console.log(`→ Redacting data in ${branchName}...`);
+          console.log(`\n→ Redacting data in ${branchName}...`);
           await redactSensitiveData(TARGET_DB_URL);
-
-          console.log();
         }
 
         console.log(
-          `Finished! You should manually check the database for issues. Here's the connection string again: \n${TARGET_DB_URL}`,
+          `\nFinished! You should manually check the database for issues. Here's the connection string again: \n${TARGET_DB_URL}`,
         );
         break;
       }

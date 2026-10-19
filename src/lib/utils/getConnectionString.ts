@@ -4,6 +4,7 @@ import env, { requireEnvVar } from '@/env';
 
 export default async function getConnectionString(
   branchName: string,
+  pooled: boolean = true,
 ): Promise<string | undefined> {
   requireEnvVar('NEON_PROJECT_ID');
 
@@ -26,6 +27,7 @@ export default async function getConnectionString(
     databaseName: 'neondb',
     roleName: 'neondb_owner',
     branchId: branch.id,
+    pooled: pooled,
   });
 
   if (!uri) {
