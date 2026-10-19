@@ -38,34 +38,45 @@ export const DevCMD = createCommand({
         return;
       }
 
-      if (hasEnvVar('GITHUB_TOKEN')) {
-        const inOrg = await inGitHubOrg(githubUsername);
+      if (hasEnvVar('GITHUB_ORG')) {
+        const GITHUB_ORG = env.GITHUB_ORG!;
+        const GITHUB_TEAM_SLUG = env.GITHUB_TEAM_SLUG;
 
-        if (!inOrg) {
-          const response = await confirmation(
-            `${githubUsername} is NOT in the UTDNebula GitHub organization. Against recommendations, are you sure you want to create this branch?`,
+        if (hasEnvVar('GITHUB_TOKEN')) {
+          const inOrg = await inGitHubOrg(
+            githubUsername,
+            GITHUB_ORG,
+            GITHUB_TEAM_SLUG,
           );
-          if (!response) {
-            console.log("Won't create a branch");
-            return;
+
+          if (!inOrg) {
+            if (
+              !(await confirmation(
+                `${githubUsername} is NOT in the ${GITHUB_ORG} GitHub organization. Against recommendations, are you sure you want to create this branch?`,
+              ))
+            ) {
+              console.log("Won't create a branch");
+              return;
+            }
           }
-        }
-        if (inOrg === 'notEngineer') {
-          const response = await confirmation(
-            `${githubUsername} is in the UTDNebula GitHub organization, but not in the engineering team. Would you like to create the branch anyway?`,
-          );
-          if (!response) {
-            console.log("Won't create a branch");
-            return;
+          if (inOrg === 'notInTeam') {
+            if (
+              !(await confirmation(
+                `${githubUsername} is in the ${GITHUB_ORG} GitHub organization, but not in the ${GITHUB_TEAM_SLUG} team. Would you like to create the branch anyway?`,
+              ))
+            ) {
+              console.log("Won't create a branch");
+              return;
+            }
           }
+        } else if (
+          !(await confirmation(
+            `Cannot check if ${githubUsername} is in the ${GITHUB_ORG} GitHub organization because the GITHUB_TOKEN environment variable is missing.\nAgainst recommendations, would you like to create the branch anyway?`,
+          ))
+        ) {
+          console.log("Won't create a branch");
+          return;
         }
-      } else if (
-        !(await confirmation(
-          `Cannot check if ${githubUsername} is in the UTDNebula GitHub organization because the GITHUB_TOKEN environment variable is missing.\nAgainst recommendations, would you like to create the branch anyway?`,
-        ))
-      ) {
-        console.log("Won't create a branch");
-        return;
       }
 
       console.log('→ Creating branch...');
