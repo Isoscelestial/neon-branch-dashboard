@@ -59,25 +59,25 @@ export const ProdCMD = createCommand({
         if (dumpExists) {
           if (await confirmation(`Dump exists already. Copy from file?`)) {
             console.log('Will copy from dump file');
+          }
+        } else {
+          if (!hasEnvVar('PRODUCTION_DATABASE_URL')) {
+            console.log(
+              'Cannot dump production database. Missing environment variable: PRODUCTION_DATABASE_URL',
+            );
+            return;
           } else {
-            if (!hasEnvVar('PRODUCTION_DATABASE_URL')) {
-              console.log(
-                'Cannot dump production database. Missing environment variable: PRODUCTION_DATABASE_URL',
-              );
+            if (
+              !(await confirmation(
+                `Need to dump production database first. Dump to file?`,
+              ))
+            ) {
+              console.log("Won't dump production database");
               return;
-            } else {
-              if (
-                !(await confirmation(
-                  `Need to dump production database first. Dump to file?`,
-                ))
-              ) {
-                console.log("Won't dump production database");
-                return;
-              }
-
-              console.log('→ Dumping production database...');
-              await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
             }
+
+            console.log('→ Dumping production database...');
+            await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
           }
         }
 
