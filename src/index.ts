@@ -1,6 +1,15 @@
 import commands from '@/lib/cli/commands';
 import rl from '@/lib/cli/readline';
 
+async function exit() {
+  console.log('\n Ending session');
+  rl.close();
+  process.exit(0);
+}
+
+process.on('SIGINT', exit);
+rl.on('SIGINT', exit);
+
 async function main() {
   console.log('Neon Branch Dashboard CLI');
 
@@ -15,7 +24,7 @@ async function main() {
       const command = argv[0].toLowerCase();
 
       if (['exit', 'quit', 'q'].includes(command)) {
-        console.log('Ending session');
+        await exit();
         break mainLoop;
       }
 
