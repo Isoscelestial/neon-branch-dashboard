@@ -1,5 +1,10 @@
-import commands from '@/lib/cli/commands';
 import rl from '@/lib/cli/readline';
+
+import { initializeEnvironment } from './env';
+initializeEnvironment();
+
+// Initialize environment before commands
+const commands = (await import('@/lib/cli/commands')).default;
 
 async function exit() {
   console.log('\n Ending session');

@@ -1,10 +1,13 @@
-import octokit from "@/lib/sdk/octokit";
+import { requireEnvVar } from '@/env';
+import octokit from '@/lib/sdk/octokit';
 import { RequestError } from 'octokit';
 
 /** Verifies that the provided GitHub account is in the engineering division of the Nebula Labs org */
 export default async function inGitHubOrg(
   githubUsername: string,
 ): Promise<boolean | 'notEngineer'> {
+  requireEnvVar('GITHUB_TOKEN');
+
   const checkInOrg = async (): Promise<boolean> => {
     try {
       const { status } = await octokit.rest.orgs.checkMembershipForUser({

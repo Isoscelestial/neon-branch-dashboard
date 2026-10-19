@@ -1,3 +1,4 @@
+import env, { hasEnvVar, requireEnvVar } from '@/env';
 import { createCommand } from '@/lib/cli/commands';
 import confirmation from '@/lib/cli/confirmation';
 import neon from '@/lib/sdk/neon';
@@ -8,7 +9,9 @@ import { dev } from '@/lib/utils/templates';
 export const DevCMD = createCommand({
   command: ['dev', 'd'],
   async function(githubUsername?: string) {
-    const projectId = process.env.NEON_PROJECT_ID!;
+    requireEnvVar('NEON_PROJECT_ID');
+
+    const projectId = env.NEON_PROJECT_ID!;
 
     if (!githubUsername) {
       console.log('githubUsername is required');
@@ -32,25 +35,34 @@ export const DevCMD = createCommand({
         return;
       }
 
-      const inOrg = await inGitHubOrg(githubUsername);
+      if (hasEnvVar('GITHUB_TOKEN')) {
+        const inOrg = await inGitHubOrg(githubUsername);
 
-      if (!inOrg) {
-        const response = await confirmation(
-          `${githubUsername} is NOT in the UTDNebula GitHub organization. Against recommendations, are you sure you want to create this branch?`,
-        );
-        if (!response) {
-          console.log("Won't create a branch");
-          return;
+        if (!inOrg) {
+          const response = await confirmation(
+            `${githubUsername} is NOT in the UTDNebula GitHub organization. Against recommendations, are you sure you want to create this branch?`,
+          );
+          if (!response) {
+            console.log("Won't create a branch");
+            return;
+          }
         }
-      }
-      if (inOrg === 'notEngineer') {
-        const response = await confirmation(
-          `${githubUsername} is in the UTDNebula GitHub organization, but not in the engineering team. Would you like to create the branch anyway?`,
-        );
-        if (!response) {
-          console.log("Won't create a branch");
-          return;
+        if (inOrg === 'notEngineer') {
+          const response = await confirmation(
+            `${githubUsername} is in the UTDNebula GitHub organization, but not in the engineering team. Would you like to create the branch anyway?`,
+          );
+          if (!response) {
+            console.log("Won't create a branch");
+            return;
+          }
         }
+      } else if (
+        !(await confirmation(
+          `Cannot check if ${githubUsername} is in the UTDNebula GitHub organization because the GITHUB_TOKEN environment variable is missing.\nAgainst recommendations, would you like to create the branch anyway?`,
+        ))
+      ) {
+        console.log("Won't create a branch");
+        return;
       }
 
       console.log('→ Creating branch...');
@@ -90,7 +102,7 @@ export const DevCMD = createCommand({
     console.log('→ Fetching connection string...');
     const uri = (
       await neon.postgres.connectionString({
-        projectId: process.env.NEON_PROJECT_ID!,
+        projectId: env.NEON_PROJECT_ID!,
         databaseName: 'neondb',
         roleName: 'neondb_owner',
         branchId: branch.id,

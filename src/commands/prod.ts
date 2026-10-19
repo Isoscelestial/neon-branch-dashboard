@@ -1,3 +1,4 @@
+import env, { hasEnvVar, requireEnvVar } from '@/env';
 import { createCommand } from '@/lib/cli/commands';
 import confirmation from '@/lib/cli/confirmation';
 import {
@@ -7,13 +8,13 @@ import {
 } from '@/lib/sdk/postgresCLI';
 import getConnectionString from '@/lib/utils/getConnectionString';
 
-const PROD_DB_URL = process.env.PRODUCTION_DATABASE_URL!;
-
 export const ProdCMD = createCommand({
   command: ['prod', 'p'],
   async function(action: 'dump' | 'transfer', branchName?: string) {
     switch (action) {
       case 'dump':
+        requireEnvVar('PRODUCTION_DATABASE_URL');
+
         if (!(await confirmation(`Dump production database to file?`))) {
           console.log("Won't dump production database");
           return;
@@ -24,7 +25,7 @@ export const ProdCMD = createCommand({
             return;
           }
         }
-        await dumpDatabase(PROD_DB_URL);
+        await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
         break;
       case 'transfer':
         if (!branchName) {
@@ -55,17 +56,24 @@ export const ProdCMD = createCommand({
           if (await confirmation(`Dump exists already. Copy from file?`)) {
             console.log('Will copy from dump file');
           } else {
-            if (
-              !(await confirmation(
-                `Need to dump production database first. Dump to file?`,
-              ))
-            ) {
-              console.log("Won't dump production database");
+            if (!hasEnvVar('PRODUCTION_DATABASE_URL')) {
+              console.log(
+                'Cannot dump production database. Missing environment variable: PRODUCTION_DATABASE_URL',
+              );
               return;
-            }
+            } else {
+              if (
+                !(await confirmation(
+                  `Need to dump production database first. Dump to file?`,
+                ))
+              ) {
+                console.log("Won't dump production database");
+                return;
+              }
 
-            console.log('→ Dumping production database...');
-            await dumpDatabase(PROD_DB_URL);
+              console.log('→ Dumping production database...');
+              await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
+            }
           }
         }
 

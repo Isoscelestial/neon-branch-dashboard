@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 
+console.log('→ Initializing commands');
+
 const commandsDir = path.resolve('src', 'commands');
 
 const commands = new Map<string | string[], (...args: any[]) => any>();
