@@ -13,6 +13,8 @@ import redactSensitiveData, {
 
 export const ProdCMD = createCommand({
   command: ['prod', 'p'],
+  helpMessage:
+    'Utilities for dumping the production database, redacting it, and restoring it to a specific development database branch',
   async function(action: 'dump' | 'transfer' | 'redact', branchName?: string) {
     switch (action) {
       case 'dump': {

@@ -6,16 +6,19 @@ console.log('→ Initializing commands');
 
 const commandsDir = path.resolve('src', 'commands');
 
-const commands = new Map<string | string[], (...args: any[]) => any>();
-
 type CommandOptions = {
   command: string | string[];
   function: (...args: any[]) => any;
-  helpMessage?: '';
+  helpMessage?: string;
 };
 
-export function createCommand(options: CommandOptions) {
-  commands.set(options.command, options.function);
+const commands = new Map<
+  CommandOptions['command'],
+  Omit<CommandOptions, 'command'>
+>();
+
+export function createCommand({ command, ...rest }: CommandOptions) {
+  commands.set(command, { ...rest });
 }
 
 async function registerCommands() {

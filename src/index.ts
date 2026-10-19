@@ -33,6 +33,18 @@ async function main() {
         break mainLoop;
       }
 
+      if (['help', 'h'].includes(command)) {
+        console.log('\nAvailable commands for Neon Branch Dashboard CLI:');
+        console.log(` ${'help, h'.padEnd(20, ' ')} Shows this help message`);
+        console.log(` ${'exit, quit, q'.padEnd(20, ' ')} End session`);
+        console.log();
+        for (const [key, value] of commands) {
+          const commands = typeof key === 'string' ? key : key.join(', ');
+          console.log(` ${commands.padEnd(20, ' ')} ${value.helpMessage}`);
+        }
+        continue;
+      }
+
       const key = commands
         .keys()
         .find((k) =>
@@ -40,7 +52,7 @@ async function main() {
         );
 
       if (key) {
-        const commandFn = commands.get(key);
+        const commandFn = commands.get(key)?.function;
 
         if (commandFn) {
           try {
