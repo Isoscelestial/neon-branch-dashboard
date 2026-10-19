@@ -16,7 +16,4 @@ Also interacts with the GitHub API using octokit.js:
 
 ## Environment Variables
 
-- `NEON_API_URL` - URL for calling Neon API raw
-- `NEON_API_KEY` - Neon API key
-- `NEON_PROJECT_ID` - ID of Neon project to create database branches in
-- `GITHUB_TOKEN` - GitHub Personal Access Token. Must have permissions to read organization members
+Copy [`.env.example`](./.env.example) to `.env` and fill in the required environment variables (the ones that aren't commented out)
