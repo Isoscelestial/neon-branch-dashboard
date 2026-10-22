@@ -1,20 +1,24 @@
-import env, { hasEnvVar, requireEnvVar } from '@/env';
+import env, { hasEnvVar } from '@/env';
 import { createCommand } from '@/lib/cli/commands';
 import confirmation from '@/lib/cli/confirmation';
 import neon from '@/lib/sdk/neon';
 import getBranches from '@/lib/utils/getBranches';
 import inGitHubOrg from '@/lib/utils/inGitHubOrg';
+import { getNeonProjectId } from '@/lib/utils/projects';
 import { dev } from '@/lib/utils/templates';
 
 export const DevCMD = createCommand({
   command: ['dev', 'd'],
   description:
     "List branches for a developer and fetch connection strings for a developer's branch",
-  help: "Usage: dev <githubUsername> [index]\n List a developer's branches:\n  dev <githubUsername>\n Fetch connection string for a developer's branch at that index (if missing, prompts to create the branch):\n  dev <githubUsername> <index>",
-  async function(githubUsername, indexParam) {
-    requireEnvVar('NEON_PROJECT_ID');
+  help: "Usage: dev <project> <githubUsername> [index]\n List a developer's branches:\n  dev <project> <githubUsername>\n Fetch connection string for a developer's branch at that index (if missing, prompts to create the branch):\n  dev <project> <githubUsername> <index>",
+  async function(project, githubUsername, indexParam) {
+    if (!project) {
+      console.log('project is required');
+      return;
+    }
 
-    const projectId = env.NEON_PROJECT_ID!;
+    const projectId = getNeonProjectId(project);
 
     if (!githubUsername) {
       console.log('githubUsername is required');
@@ -39,7 +43,7 @@ export const DevCMD = createCommand({
       `^${escapedBranchName}(?!#)(?=[# ]+|$)`,
     );
 
-    const allBranches = await getBranches();
+    const allBranches = await getBranches(projectId);
 
     // If no index provided, list matching branches
     if (!indexParam) {
@@ -157,7 +161,7 @@ export const DevCMD = createCommand({
     console.log('→ Fetching connection string...');
     const uri = (
       await neon.postgres.connectionString({
-        projectId: env.NEON_PROJECT_ID!,
+        projectId: projectId,
         databaseName: 'neondb',
         roleName: 'neondb_owner',
         branchId: branch.id,

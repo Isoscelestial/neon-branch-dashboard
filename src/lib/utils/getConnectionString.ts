@@ -3,17 +3,16 @@ import getBranches from './getBranches';
 import env, { requireEnvVar } from '@/env';
 
 export default async function getConnectionString(
+  projectId: string,
   branchName: string,
   pooled: boolean = true,
 ): Promise<string | undefined> {
-  requireEnvVar('NEON_PROJECT_ID');
-
   if (!branchName) {
     console.error('Branch name is required');
     return;
   }
 
-  const branches = await getBranches();
+  const branches = await getBranches(projectId);
 
   const branch = branches.find((branch) => branch.name === branchName);
 
@@ -23,7 +22,7 @@ export default async function getConnectionString(
   }
 
   const { data: uri } = await neon.postgres.connectionString({
-    projectId: env.NEON_PROJECT_ID!,
+    projectId: projectId,
     databaseName: 'neondb',
     roleName: 'neondb_owner',
     branchId: branch.id,

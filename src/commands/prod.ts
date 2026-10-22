@@ -1,4 +1,3 @@
-import env, { hasEnvVar, requireEnvVar } from '@/env';
 import { createCommand } from '@/lib/cli/commands';
 import confirmation from '@/lib/cli/confirmation';
 import {
@@ -7,6 +6,11 @@ import {
   restoreDatabase,
 } from '@/lib/sdk/postgresCLI';
 import getConnectionString from '@/lib/utils/getConnectionString';
+import {
+  envProjectProdDatabaseURL,
+  getNeonProjectId,
+  getProjectProdDatabaseURL,
+} from '@/lib/utils/projects';
 import redactSensitiveData, {
   promptRedactSensitiveData,
 } from '@/lib/utils/redactSensitiveData';
@@ -15,12 +19,28 @@ export const ProdCMD = createCommand({
   command: ['prod', 'p'],
   description:
     'Utilities for dumping the production database, redacting it, and restoring it to a specific development database branch',
-  help: 'Usage:\n  prod dump\n  prod transfer <targetBranchName>\n  prod redact <branchName>',
-  async function(action, branchName) {
+  help: 'Usage:\n  prod dump <project>\n  prod transfer <project> <targetBranchName>\n  prod redact <project> <branchName>',
+  async function(action, project, branchName) {
+    if (!action) {
+      console.log('action is required');
+      return;
+    }
+    if (!project) {
+      console.log('project is required');
+      return;
+    }
+
+    const projectId = getNeonProjectId(project);
+
     switch (action) {
       case 'dump': {
-        requireEnvVar('PRODUCTION_DATABASE_URL');
-
+        const PRODUCTION_DATABASE_URL = getProjectProdDatabaseURL(project);
+        if (!PRODUCTION_DATABASE_URL) {
+          console.log(
+            `Cannot dump ${project} production database. Missing environment variable: ${envProjectProdDatabaseURL(project)}`,
+          );
+          return;
+        }
         if (!(await confirmation(`Dump production database to file?`))) {
           console.log("Won't dump production database");
           return;
@@ -31,7 +51,7 @@ export const ProdCMD = createCommand({
             return;
           }
         }
-        await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
+        await dumpDatabase(PRODUCTION_DATABASE_URL);
         break;
       }
       case 'transfer': {
@@ -41,8 +61,9 @@ export const ProdCMD = createCommand({
         }
 
         console.log('\n→ Fetching target branch connection string...');
-        const TARGET_DB_URL = await getConnectionString(branchName);
+        const TARGET_DB_URL = await getConnectionString(projectId, branchName);
         const TARGET_DB_URL_UNPOOLED = await getConnectionString(
+          projectId,
           branchName,
           false,
         );
@@ -59,14 +80,16 @@ export const ProdCMD = createCommand({
 
         console.log('\n→ Checking if dump file exists...');
         const dumpExists = await checkIfDumpExists();
+        const PRODUCTION_DATABASE_URL = getProjectProdDatabaseURL(project);
+
         if (dumpExists) {
           if (await confirmation(`Dump exists already. Copy from file?`)) {
             console.log('Will copy from dump file');
           }
         } else {
-          if (!hasEnvVar('PRODUCTION_DATABASE_URL')) {
+          if (!PRODUCTION_DATABASE_URL) {
             console.log(
-              'Cannot dump production database. Missing environment variable: PRODUCTION_DATABASE_URL',
+              `Cannot dump ${project} production database. Missing environment variable: ${envProjectProdDatabaseURL(project)}`,
             );
             return;
           } else {
@@ -80,7 +103,7 @@ export const ProdCMD = createCommand({
             }
 
             console.log('→ Dumping production database...');
-            await dumpDatabase(env.PRODUCTION_DATABASE_URL!);
+            await dumpDatabase(PRODUCTION_DATABASE_URL);
           }
         }
 
@@ -117,7 +140,7 @@ export const ProdCMD = createCommand({
         }
 
         console.log('\n→ Fetching target branch connection string...');
-        const TARGET_DB_URL = await getConnectionString(branchName);
+        const TARGET_DB_URL = await getConnectionString(projectId, branchName);
         if (!TARGET_DB_URL) return;
 
         if (

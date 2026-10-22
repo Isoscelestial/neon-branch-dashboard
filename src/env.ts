@@ -1,12 +1,21 @@
-import z, { ZodString } from 'zod';
-import { PROJECTS, ProjectValue } from '@/lib/utils/projects';
+import z from 'zod';
+import {
+  envNeonProjectId,
+  envProjectProdDatabaseURL,
+  PROJECTS,
+} from '@/lib/utils/projects';
 
-const neonProjectsSchema = PROJECTS.reduce<Record<string, ZodString>>(
+const neonProjectsSchema = PROJECTS.reduce<Record<string, z.ZodType>>(
   (accumulator, current) => {
-    const envKeyName = `${current.value.toUpperCase()}_NEON_PROJECT_ID`;
-    accumulator[envKeyName] = z.string({
+    accumulator[envNeonProjectId(current.value)] = z.string({
       error: `Missing project ID for ${current.label}`,
     });
+    accumulator[envProjectProdDatabaseURL(current.value)] = z
+      .string({
+        error: `Production database URL for ${current.label} should be an unpooled database URL`,
+      })
+      .optional();
+
     return accumulator;
   },
   {},
@@ -18,10 +27,6 @@ const envSchema = z.object({
     error:
       'Missing API key! Ensure this key is scoped to include the project ID',
   }),
-  NEON_PROJECT_ID: z.string({
-    error:
-      'Missing project ID! Corresponds to the Neon project for development database branches',
-  }),
   GITHUB_TOKEN: z
     .string({
       error:
@@ -30,9 +35,6 @@ const envSchema = z.object({
     .optional(),
   GITHUB_ORG: z.string().optional(),
   GITHUB_TEAM_SLUG: z.string().optional(),
-  PRODUCTION_DATABASE_URL: z
-    .string({ error: 'Should be an unpooled database URL' })
-    .optional(),
   ...neonProjectsSchema,
 });
 
