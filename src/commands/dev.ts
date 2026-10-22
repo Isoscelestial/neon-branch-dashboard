@@ -9,9 +9,9 @@ import { dev } from '@/lib/utils/templates';
 export const DevCMD = createCommand({
   command: ['dev', 'd'],
   description:
-    "Gets connection string for a developer's branch given their username. If missing, creates a branch",
-  help: 'Usage: dev <branchName>',
-  async function(githubUsername?: string) {
+    "List branches for a developer and fetch connection strings for a developer's branch",
+  help: "Usage: dev <githubUsername> [index]\n List a developer's branches:\n  dev <githubUsername>\n Fetch connection string for a developer's branch at that index (if missing, prompts to create the branch):\n  dev <githubUsername> <index>",
+  async function(githubUsername, indexParam) {
     requireEnvVar('NEON_PROJECT_ID');
 
     const projectId = env.NEON_PROJECT_ID!;
@@ -20,13 +20,54 @@ export const DevCMD = createCommand({
       console.log('githubUsername is required');
       return;
     }
+    const index = indexParam ? Number(indexParam) : 0;
+    if (index && (!Number.isInteger(index) || index < 0)) {
+      console.error('Invalid index for branch name');
+      return;
+    }
 
-    const branchName = dev(githubUsername.toLowerCase());
+    const branchName = dev(githubUsername.toLowerCase(), index);
+    const escapedBranchName = branchName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    const branches = await getBranches();
+    // Matches all branches that belong to username
+    const matchingBranchesRegex = new RegExp(
+      `^${escapedBranchName}(?=[# ]+|$)`,
+    );
 
-    let branch = branches.find(
-      (branch) => branch.name.toLowerCase() === branchName,
+    // Matches branch that starts with branchName, while avoiding conflicts
+    const branchNamePrefixRegex = new RegExp(
+      `^${escapedBranchName}(?!#)(?=[# ]+|$)`,
+    );
+
+    const allBranches = await getBranches();
+
+    // If no index provided, list matching branches
+    if (!indexParam) {
+      const branches = allBranches.filter((branch) =>
+        matchingBranchesRegex.test(branch.name.toLowerCase()),
+      );
+
+      if (branches.length !== 0) {
+        console.log(
+          `Found ${branches.length} ${branches.length === 1 ? 'branch' : 'branches'} for ${githubUsername}:`,
+        );
+        branches.forEach((branch) => {
+          const index = Number(branch.name.match(/(?<=(.+#))\d*/)?.[0] ?? 0);
+
+          console.log(`${String(index).padStart(2, ' ')} ${branch.name}`);
+        });
+        console.log(
+          'Run command again with [index] provided to get connection string for that branch',
+        );
+      } else {
+        console.log(`Did not find any branches for ${githubUsername}`);
+      }
+
+      return;
+    }
+
+    let branch = allBranches.find((branch) =>
+      branchNamePrefixRegex.test(branch.name.toLowerCase()),
     );
 
     if (!branch) {

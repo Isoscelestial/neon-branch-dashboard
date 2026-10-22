@@ -16,7 +16,7 @@ export const ProdCMD = createCommand({
   description:
     'Utilities for dumping the production database, redacting it, and restoring it to a specific development database branch',
   help: 'Usage:\n  prod dump\n  prod transfer <targetBranchName>\n  prod redact <branchName>',
-  async function(action: 'dump' | 'transfer' | 'redact', branchName?: string) {
+  async function(action, branchName) {
     switch (action) {
       case 'dump': {
         requireEnvVar('PRODUCTION_DATABASE_URL');

@@ -8,7 +8,7 @@ const commandsDir = path.resolve('src', 'commands');
 
 type CommandOptions = {
   command: string | string[];
-  function: (...args: any[]) => any;
+  function: (...args: (string | undefined)[]) => any;
   description?: string;
   help?: string;
 };

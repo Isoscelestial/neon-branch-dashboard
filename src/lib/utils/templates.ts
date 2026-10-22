@@ -13,10 +13,10 @@ export const GitHubUsernameRegex =
  */
 export function dev(
   githubUsername: string,
-  index: number = 1,
+  index?: number,
   note?: string,
 ): string {
-  if (!Number.isInteger(index) || index < 0) {
+  if (index && (!Number.isInteger(index) || index < 0)) {
     throw new Error('Invalid index for branch name');
   }
 

@@ -75,7 +75,10 @@ async function main() {
         if (commandFn) {
           try {
             argv.shift();
-            await commandFn(...argv);
+            const returnValue = await commandFn(...argv);
+            if (returnValue) {
+              console.log(`${command} returned with:`, returnValue);
+            }
           } catch (e) {
             console.error(
               `An error occurred while running command "${command}" -`,
