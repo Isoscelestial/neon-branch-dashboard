@@ -10,6 +10,12 @@ const envSchema = z.object({
     error:
       'Missing project ID! Corresponds to the Neon project for development database branches',
   }),
+  CLUBS_NEON_PROJECT_ID: z.string({
+    error: 'Missing project ID for Clubs (dev)',
+  }),
+  NOTEBOOK_NEON_PROJECT_ID: z.string({
+    error: 'Missing project ID for Notebook (dev)',
+  }),
   GITHUB_TOKEN: z
     .string({
       error:
