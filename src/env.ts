@@ -1,4 +1,16 @@
-import z from 'zod';
+import z, { ZodString } from 'zod';
+import { PROJECTS, ProjectValue } from '@/lib/utils/projects';
+
+const neonProjectsSchema = PROJECTS.reduce<Record<string, ZodString>>(
+  (accumulator, current) => {
+    const envKeyName = `${current.value.toUpperCase()}_NEON_PROJECT_ID`;
+    accumulator[envKeyName] = z.string({
+      error: `Missing project ID for ${current.label}`,
+    });
+    return accumulator;
+  },
+  {},
+);
 
 const envSchema = z.object({
   NEON_API_URL: z.string().default('https://console.neon.tech/api/v2'),
@@ -9,12 +21,6 @@ const envSchema = z.object({
   NEON_PROJECT_ID: z.string({
     error:
       'Missing project ID! Corresponds to the Neon project for development database branches',
-  }),
-  CLUBS_NEON_PROJECT_ID: z.string({
-    error: 'Missing project ID for Clubs (dev)',
-  }),
-  NOTEBOOK_NEON_PROJECT_ID: z.string({
-    error: 'Missing project ID for Notebook (dev)',
   }),
   GITHUB_TOKEN: z
     .string({
@@ -27,6 +33,7 @@ const envSchema = z.object({
   PRODUCTION_DATABASE_URL: z
     .string({ error: 'Should be an unpooled database URL' })
     .optional(),
+  ...neonProjectsSchema,
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

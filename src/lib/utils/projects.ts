@@ -21,3 +21,7 @@ export const PROJECTS = [
 ] as const satisfies Project[];
 
 export type ProjectValue = (typeof PROJECTS)[number]['value'];
+
+export function getNeonProjectId(project: ProjectValue) {
+  return PROJECTS.find((p) => p.value === project)?.neonProjectId;
+}
