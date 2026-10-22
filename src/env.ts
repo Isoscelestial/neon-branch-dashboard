@@ -68,6 +68,7 @@ export function requireEnvVar(envVarKey: keyof EnvSchema) {
     throw new Error(
       `This requires an environment variable that is missing: ${envVarKey}`,
     );
+  return env[envVarKey];
 }
 
 export default env;
