@@ -1,45 +1,32 @@
-/**
- * Constructs a branch name based off someone's GitHub username. Can be used as either a function or tagged template
- * literal
- */
-export function dev(githubUsername: string): string;
-export function dev(strings: TemplateStringsArray, ...values: string[]): string;
-export function dev(
-  strings: string | TemplateStringsArray,
-  ...values: string[]
-): string {
-  const username =
-    typeof strings === 'string'
-      ? // Used as a function (probably)
-        strings
-      : // Used as a tagged template literal (probably)
-        strings.reduce((result, str, i) => {
-          const value = values[i] !== undefined ? `${values[i]}` : '';
-          return result + str + value;
-        }, '');
+/** Matches a valid GitHub username */
+export const GitHubUsernameRegex =
+  /^[a-zA-Z\d](?:[a-zA-Z\d]|-(?=[a-zA-Z\d])){0,38}$/;
 
-  return `dev/${username}`;
+/**
+ * Constructs the branch name belonging to a particular GitHub username
+ *
+ * @param githubUsername The person this branch belongs to
+ * @param index A positive integer that selects a branch per person. If 0, omits the index suffix (i.e. uses legacy
+ *   branch name system)
+ * @param note A string to append to the end of the branch name
+ * @returns
+ */
+export function dev(
+  githubUsername: string,
+  index: number = 1,
+  note?: string,
+): string {
+  if (!Number.isInteger(index) || index < 0) {
+    throw new Error('Invalid index for branch name');
+  }
+
+  // Legacy branch name
+  if (index === 0) return `dev/${githubUsername}`;
+
+  return `dev/${githubUsername}#${index}${note ? ` ${note}` : ''}`;
 }
 
-/** Constructs a branch name based off a GitHub branch. Can be used as either a function or tagged template literal */
-export function preview(gitBranch: string): string;
-export function preview(
-  strings: TemplateStringsArray,
-  ...values: string[]
-): string;
-export function preview(
-  strings: string | TemplateStringsArray,
-  ...values: string[]
-): string {
-  const gitBranch =
-    typeof strings === 'string'
-      ? // Used as a function (probably)
-        strings
-      : // Used as a tagged template literal (probably)
-        strings.reduce((result, str, i) => {
-          const value = values[i] !== undefined ? `${values[i]}` : '';
-          return result + str + value;
-        }, '');
-
+/** Constructs a branch name based off a GitHub branch. */
+export function preview(gitBranch: string): string {
   return `preview/${gitBranch}`;
 }
